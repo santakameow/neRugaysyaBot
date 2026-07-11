@@ -14,39 +14,74 @@ import (
 )
 
 func main() {
+	// context and correct exit
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
 		os.Interrupt,
 		syscall.SIGTERM,
 	)
 	defer cancel()
+
 	botToken := os.Getenv("TOKEN")
 
-	// Note: Please keep in mind that default logger may expose sensitive information, use in development only
+	// create new bot with debug logger (debug logger may expose sensitive info)
 	bot, err := telego.NewBot(botToken, telego.WithDefaultDebugLogger())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	// Get updates channel
-	updates, _ := bot.UpdatesViaLongPolling(ctx, nil)
-
-	// Create bot handler and specify from where to get updates
-	bh, _ := th.NewBotHandler(bot, updates)
-
-	badWords := []string{
-		"бака",
+	// get updates channel
+	updates, err := bot.UpdatesViaLongPolling(ctx, nil)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
 	}
 
-	// take user message
+	// bot handler
+	bh, err := th.NewBotHandler(bot, updates)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+
+	// get bad words list from badWords.txt
+	badWords, err := os.ReadFile("badWords.txt")
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+	var words []string
+
+	for _, line := range strings.Split(string(badWords), "\n") {
+		line = strings.TrimSpace(line)
+
+		// skip empty lines
+		if line == "" {
+			continue
+		}
+
+		// skip comments
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		words = append(words, strings.ToLower(line))
+	}
+
+	// main handler
 	bh.Handle(func(ctx *th.Context, update telego.Update) error {
-		userMessage := update.Message.Text
-		for _, word := range badWords {
-			if strings.Contains(strings.ToLower(userMessage), strings.ToLower(word)) {
-				// bot send message
+		// get user message from updates
+		userMessage := strings.ToLower(update.Message.Text)
+
+		for _, word := range words {
+			// if string contains bad word
+			if strings.Contains(userMessage, word) {
+				// send message
 				bot.SendMessage(ctx, tu.Message(
+					// to last chat id
 					tu.ID(update.Message.Chat.ID),
+					// with this warn
 					"Не ругайся!",
 				))
 				return nil
@@ -54,6 +89,7 @@ func main() {
 		}
 		return nil
 	})
+
 	// Stop handling updates
 	defer func() { _ = bh.Stop() }()
 

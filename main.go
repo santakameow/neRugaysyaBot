@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -12,7 +14,12 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
+	defer cancel()
 	botToken := os.Getenv("TOKEN")
 
 	// Note: Please keep in mind that default logger may expose sensitive information, use in development only

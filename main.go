@@ -30,6 +30,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	fmt.Println("bot started")
 
 	// get updates channel
 	updates, err := bot.UpdatesViaLongPolling(ctx, nil)

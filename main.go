@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -27,12 +28,25 @@ func main() {
 	// Create bot handler and specify from where to get updates
 	bh, _ := th.NewBotHandler(bot, updates)
 
-	// bothandler
+	badWords := []string{
+		"бака",
+	}
+
+	// take user message
 	bh.Handle(func(ctx *th.Context, update telego.Update) error {
-		bot.SendMessage(ctx, tu.Message(tu.ID(update.Message.Chat.ID), "meow"))
+		userMessage := update.Message.Text
+		for _, word := range badWords {
+			if strings.Contains(strings.ToLower(userMessage), strings.ToLower(word)) {
+				// bot send message
+				bot.SendMessage(ctx, tu.Message(
+					tu.ID(update.Message.Chat.ID),
+					"Не ругайся!",
+				))
+				return nil
+			}
+		}
 		return nil
 	})
-
 	// Stop handling updates
 	defer func() { _ = bh.Stop() }()
 

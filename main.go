@@ -24,8 +24,8 @@ func main() {
 
 	botToken := os.Getenv("TOKEN")
 
-	// create new bot with debug logger (debug logger may expose sensitive info)
-	bot, err := telego.NewBot(botToken, telego.WithDefaultDebugLogger())
+	// create new bot without debug logger (debug logger may expose sensitive info)
+	bot, err := telego.NewBot(botToken)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

@@ -27,29 +27,25 @@ func main() {
 	// create new bot without debug logger (debug logger may expose sensitive info)
 	bot, err := telego.NewBot(botToken)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		panic(err)
 	}
 	fmt.Println("bot started")
 
 	// get updates channel
 	updates, err := bot.UpdatesViaLongPolling(ctx, nil)
 	if err != nil {
-		fmt.Println(err)
 		panic(err)
 	}
 
 	// bot handler
 	bh, err := th.NewBotHandler(bot, updates)
 	if err != nil {
-		fmt.Println(err)
 		panic(err)
 	}
 
 	// get bad words list from badWords.txt
 	badWords, err := os.ReadFile("badWords.txt")
 	if err != nil {
-		fmt.Println(err)
 		panic(err)
 	}
 	var words []string

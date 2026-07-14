@@ -15,6 +15,7 @@ FROM scratch
 WORKDIR /app
 
 COPY --from=build /neRugaysyaBot /neRugaysyaBot
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY badWords.txt ./
 
 CMD ["/neRugaysyaBot"]

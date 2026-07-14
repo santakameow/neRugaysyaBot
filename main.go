@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -46,8 +48,36 @@ func main() {
 	// get bad words list from badWords.txt
 	badWords, err := os.ReadFile("badWords.txt")
 	if err != nil {
-		panic(err)
+		fmt.Printf("badWords.txt not found\ndownloading...\n")
+
+		resp, err := http.Get("https://raw.githubusercontent.com/santakameow/NeRugaysyaBot/refs/heads/main/badWords.txt")
+		if err != nil {
+			panic(err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			panic(resp.Status)
+		}
+
+		create, err := os.Create("badWords.txt")
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = io.Copy(create, resp.Body)
+		create.Close()
+
+		if err != nil {
+			panic(err)
+		}
+
+		badWords, err = os.ReadFile("badWords.txt")
+		if err != nil {
+			panic(err)
+		}
 	}
+
 	var words []string
 
 	for _, line := range strings.Split(string(badWords), "\n") {

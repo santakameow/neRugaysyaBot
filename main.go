@@ -111,6 +111,7 @@ func main() {
 					// with this warn
 					"Не ругайся!",
 				))
+				fmt.Println("bot sended message")
 				return nil
 			}
 		}

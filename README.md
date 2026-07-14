@@ -11,6 +11,6 @@ docker build -t nerugaysyabot .
 run
 ```sh
 source env.bash # create a env before btw
-docker run -e TOKEN --name nerugaysyabot nerugaysyabot
+docker run -e TOKEN --name nerugaysyabot -d nerugaysyabot
 ```
 

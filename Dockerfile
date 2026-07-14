@@ -1,6 +1,6 @@
-FROM golang:1.26.4
-
-WORKDIR /app
+# stage 1
+FROM golang:1.26.4 AS build
+WORKDIR /src
 
 COPY go.mod go.sum ./
 
@@ -10,6 +10,11 @@ COPY *.go ./
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /neRugaysyaBot
 
+# stage 2
+FROM scratch
+WORKDIR /app
+
+COPY --from=build /neRugaysyaBot /neRugaysyaBot
 COPY badWords.txt ./
 
 CMD ["/neRugaysyaBot"]

@@ -17,6 +17,5 @@ WORKDIR /app
 COPY --from=build ./neRugaysyaBot ./neRugaysyaBot
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY badWords.txt ./
-COPY .env ./
 
 CMD ["./neRugaysyaBot"]

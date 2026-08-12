@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -63,12 +62,7 @@ func main() {
 		line = strings.TrimSpace(line)
 
 		// skip empty lines
-		if line == "" {
-			continue
-		}
-
-		// skip comments
-		if strings.HasPrefix(line, "#") {
+		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 
@@ -80,26 +74,23 @@ func main() {
 		// get user message from updates
 		userMessage := strings.ToLower(update.Message.Text)
 
+		
 		for _, word := range words {
-			// if string contains bad word
 			if strings.Contains(userMessage, word) {
 				// send message
 				bot.SendMessage(ctx, tu.Message(
-					// to last chat id
 					tu.ID(update.Message.Chat.ID),
-					// with this warn
 					"Не ругайся!",
 				))
-				fmt.Println("bot sended message")
 				return nil
 			}
 		}
 		return nil
 	})
 
-	// Stop handling updates
+	// Stop handling
 	defer bh.Stop()
 
-	// Start handling updates
+	// Start handling
 	_ = bh.Start()
 }

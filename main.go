@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
+	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
+
+	"github.com/joho/godotenv"
 
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -16,6 +17,12 @@ import (
 )
 
 func main() {
+	// load env
+    err := godotenv.Load()
+	if err != nil {
+		log.Fatal("error loading .env file")
+	}
+
 	// context and correct exit
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
@@ -24,14 +31,13 @@ func main() {
 	)
 	defer cancel()
 
-	botToken := os.Getenv("TOKEN")
+	botToken := os.Getenv("BOT_TOKEN")
 
-	// create new bot without debug logger (debug logger may expose sensitive info)
-	bot, err := telego.NewBot(botToken)
+	// create new bot
+	bot, err := telego.NewBot(botToken, telego.WithDefaultDebugLogger())
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("bot started")
 
 	// get updates channel
 	updates, err := bot.UpdatesViaLongPolling(ctx, nil)
@@ -48,34 +54,7 @@ func main() {
 	// get bad words list from badWords.txt
 	badWords, err := os.ReadFile("badWords.txt")
 	if err != nil {
-		fmt.Printf("badWords.txt not found\ndownloading...\n")
-
-		resp, err := http.Get("https://raw.githubusercontent.com/santakameow/NeRugaysyaBot/refs/heads/main/badWords.txt")
-		if err != nil {
-			panic(err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			panic(resp.Status)
-		}
-
-		create, err := os.Create("badWords.txt")
-		if err != nil {
-			panic(err)
-		}
-
-		_, err = io.Copy(create, resp.Body)
-		create.Close()
-
-		if err != nil {
-			panic(err)
-		}
-
-		badWords, err = os.ReadFile("badWords.txt")
-		if err != nil {
-			panic(err)
-		}
+		log.Fatal("badWords.txt not found")
 	}
 
 	var words []string
@@ -119,7 +98,7 @@ func main() {
 	})
 
 	// Stop handling updates
-	defer func() { _ = bh.Stop() }()
+	defer bh.Stop()
 
 	// Start handling updates
 	_ = bh.Start()

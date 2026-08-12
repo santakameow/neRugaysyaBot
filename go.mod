@@ -2,7 +2,10 @@ module NeRugaysyaBot
 
 go 1.26.4
 
-require github.com/mymmrac/telego v1.10.0
+require (
+	github.com/joho/godotenv v1.5.1
+	github.com/mymmrac/telego v1.10.0
+)
 
 require (
 	github.com/andybalholm/brotli v1.2.1 // indirect

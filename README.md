@@ -38,32 +38,17 @@ Or with `.env` support:
 go run main.go
 ```
 
-## Docker
-
-Build the image:
-
-```bash
-docker build -t nerugaysyabot:latest .
-```
-
-Run the container:
-
-```bash
-docker run --rm --env-file .env nerugaysyabot:latest
-```
-
 ## Docker Compose
 
 Use the existing `docker-compose.yml`:
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
 ## badWords.txt Format
 
 - One word per line
-- Case-insensitive matching
 - Lines starting with `#` are treated as comments
 - Example:
 
@@ -76,4 +61,3 @@ anotherbadword
 ## Notes
 
 - The bot replies only once per message on first detected bad word.
-- Ensure the `.env` file is not committed if it contains a real bot token.

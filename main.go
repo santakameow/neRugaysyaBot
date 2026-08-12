@@ -100,7 +100,6 @@ func main() {
 				
 			).WithReplyParameters(&telego.ReplyParameters{
 				MessageID: update.Message.MessageID,
-				Quote: update.Message.Text,
 			}))
 			if err != nil {
 				log.Printf("failed to send warning message: %v", err)

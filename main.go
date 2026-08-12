@@ -20,7 +20,7 @@ func main() {
 	// load env
     err := godotenv.Load()
 	if err != nil {
-		log.Fatal("error loading .env file")
+		log.Print("error loading .env file")
 	}
 
 	// context and correct exit

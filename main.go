@@ -56,7 +56,7 @@ func main() {
 		log.Fatal("badWords.txt not found")
 	}
 
-	var words []string
+	badWordsMap := make(map[string]struct{})
 
 	for _, line := range strings.Split(string(badWords), "\n") {
 		line = strings.TrimSpace(line)
@@ -66,7 +66,7 @@ func main() {
 			continue
 		}
 
-		words = append(words, strings.ToLower(line))
+		badWordsMap[strings.ToLower(line)] = struct{}{}
 	}
 
 	// main handler
@@ -74,9 +74,10 @@ func main() {
 		// get user message from updates
 		userMessage := strings.ToLower(update.Message.Text)
 
+		userWords := strings.Fields(strings.ToLower(userMessage))
 		
-		for _, word := range words {
-			if strings.Contains(userMessage, word) {
+		for _, word := range userWords {
+			if _, exists := badWordsMap[word]; exists {
 				// send message
 				bot.SendMessage(ctx, tu.Message(
 					tu.ID(update.Message.Chat.ID),

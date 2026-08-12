@@ -1,0 +1,8 @@
+services:
+  nerugaysyabot:
+    build: .
+    image: sakameow/nerugaysyabot:latest
+    container_name: nerugaysyabot
+    restart: unless-stopped
+    env_file:
+      - .env

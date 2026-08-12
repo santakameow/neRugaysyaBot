@@ -97,7 +97,10 @@ func main() {
 			_, err := bot.SendMessage(ctx, tu.Message(
 				tu.ID(update.Message.Chat.ID),
 				"Не ругайся!",
-			))
+				
+			).WithReplyParameters(&telego.ReplyParameters{
+				MessageID: update.Message.MessageID,
+			}))
 			if err != nil {
 				log.Printf("failed to send warning message: %v", err)
 				return nil

@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"regexp"
 	"strings"
 	"syscall"
 
@@ -31,33 +32,35 @@ func main() {
 	defer cancel()
 
 	botToken := os.Getenv("BOT_TOKEN")
+	if botToken == "" {
+		log.Fatal("BOT_TOKEN environment variable is not set")
+	}
 
 	// create new bot
 	bot, err := telego.NewBot(botToken, telego.WithDefaultDebugLogger())
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to create bot: %v", err)
 	}
 
 	// get updates channel
 	updates, err := bot.UpdatesViaLongPolling(ctx, nil)
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to get updates: %v", err)
 	}
 
 	// bot handler
 	bh, err := th.NewBotHandler(bot, updates)
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to create bot handler: %v", err)
 	}
 
 	// get bad words list from badWords.txt
 	badWords, err := os.ReadFile("badWords.txt")
 	if err != nil {
-		log.Fatal("badWords.txt not found")
+		log.Fatalf("failed to read badWords.txt: %v", err)
 	}
 
-	badWordsMap := make(map[string]struct{})
-
+	var patterns []string
 	for _, line := range strings.Split(string(badWords), "\n") {
 		line = strings.TrimSpace(line)
 
@@ -66,26 +69,41 @@ func main() {
 			continue
 		}
 
-		badWordsMap[strings.ToLower(line)] = struct{}{}
+		patterns = append(patterns, line)
+	}
+
+	if len(patterns) == 0 {
+		log.Fatal("no bad words patterns found in badWords.txt")
+	}
+
+	log.Printf("loaded %d bad words patterns", len(patterns))
+
+	badWordsRegex, err := regexp.Compile("(?i)" + strings.Join(patterns, "|"))
+	if err != nil {
+		log.Fatalf("failed to compile bad words regex: %v", err)
 	}
 
 	// main handler
 	bh.Handle(func(ctx *th.Context, update telego.Update) error {
-		// get user message from updates
-		userMessage := strings.ToLower(update.Message.Text)
+		// validate message exists
+		if update.Message == nil {
+			return nil
+		}
 
-		userWords := strings.Fields(strings.ToLower(userMessage))
-		
-		for _, word := range userWords {
-			if _, exists := badWordsMap[word]; exists {
-				// send message
-				bot.SendMessage(ctx, tu.Message(
-					tu.ID(update.Message.Chat.ID),
-					"Не ругайся!",
-				))
+		// check for bad words
+		if badWordsRegex.MatchString(update.Message.Text) {
+			log.Printf("bad word detected in chat %d from user %d", update.Message.Chat.ID, update.Message.From.ID)
+
+			_, err := bot.SendMessage(ctx, tu.Message(
+				tu.ID(update.Message.Chat.ID),
+				"Не ругайся!",
+			))
+			if err != nil {
+				log.Printf("failed to send warning message: %v", err)
 				return nil
 			}
 		}
+
 		return nil
 	})
 
@@ -93,5 +111,8 @@ func main() {
 	defer bh.Stop()
 
 	// Start handling
-	_ = bh.Start()
+	log.Println("bot handler started")
+	if err := bh.Start(); err != nil {
+		log.Fatalf("bot handler error: %v", err)
+	}
 }

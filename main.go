@@ -20,7 +20,7 @@ func main() {
 	// load env
 	err := godotenv.Load()
 	if err != nil {
-		log.Print("error loading .env file")
+		log.Printf("error loading .env file: %v", err)
 	}
 
 	// context and correct exit
@@ -97,7 +97,6 @@ func main() {
 			_, err := bot.SendMessage(ctx, tu.Message(
 				tu.ID(update.Message.Chat.ID),
 				"Не ругайся!",
-				
 			).WithReplyParameters(&telego.ReplyParameters{
 				MessageID: update.Message.MessageID,
 			}))
@@ -106,7 +105,6 @@ func main() {
 				return nil
 			}
 		}
-
 		return nil
 	})
 

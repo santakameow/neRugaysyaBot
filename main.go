@@ -1,11 +1,9 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/joho/godotenv"
 
@@ -15,10 +13,8 @@ import (
 )
 
 // start bot with specified token
-func startBot(botToken string, patterns []string) error {
+func startBot(botToken string) error {
 	ctx := context.Background()
-
-	fmt.Println(patterns)
 
 	// register new bot
 	bot, err := telego.NewBot(botToken, telego.WithDefaultDebugLogger())
@@ -41,58 +37,29 @@ func startBot(botToken string, patterns []string) error {
 		os.Exit(1)
 	}
 
-	words := patterns
-
 	// handle all messages
 	bh.Handle(func(ctx *th.Context, update telego.Update) error {
-
 		// send message if bad word detected
-		for _, word := range words {
-			if strings.Contains(strings.ToLower(update.Message.Text), word) {
-				bot.SendMessage(
-					ctx,
-					tu.Messagef(
-						tu.ID(update.Message.Chat.ID),
-						"%s, не ругайся!", update.Message.From.FirstName,
-					).WithReplyParameters(&telego.ReplyParameters{
+		if IsProfane(update.Message.Text) {
+			bot.SendMessage(
+				ctx,
+				tu.Messagef(
+					tu.ID(update.Message.Chat.ID),
+					"%s, не ругайся!", update.Message.From.FirstName,
+				).WithReplyParameters(&telego.ReplyParameters{
 					MessageID: update.Message.MessageID,
 				}))
-			}
 		}
-		
 		return nil
 	})
 
-	defer func ()  {
+	defer func() {
 		_ = bh.Stop()
-	} ()
+	}()
 
 	bh.Start()
 
 	return err
-}
-
-// load patterns from specified file
-func loadPatterns(file string) []string {
-
-	badWords, _ := os.Open(file)
-	defer badWords.Close()
-
-	fileScanner := bufio.NewScanner(badWords)
-
-	var patterns []string
-
-	for fileScanner.Scan() {
-		if fileScanner.Text() == "" || strings.HasPrefix(fileScanner.Text(), "#") {
-			continue
-		}
-		patterns = append(patterns, fileScanner.Text())
-	}
-	if err := fileScanner.Err(); err != nil {
-		fmt.Println(err)
-	}
-
-	return patterns
 }
 
 func main() {
@@ -101,10 +68,8 @@ func main() {
 		fmt.Printf("error: %s", err)
 	}
 
+	// token of bot that comes from env
 	botToken := os.Getenv("BOT_TOKEN")
 
-	patterns := loadPatterns("badWords.txt")
-
-
-	startBot(botToken, patterns)
+	startBot(botToken)
 }

@@ -15,6 +15,5 @@ FROM gcr.io/distroless/static-debian12
 WORKDIR /app
 
 COPY --from=build /app/neRugaysyaBot ./
-COPY badWords.txt ./
 
 CMD ["./neRugaysyaBot"]

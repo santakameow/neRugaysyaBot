@@ -29,13 +29,13 @@ The bot also loads the bad word list from `badWords.txt`. Empty lines and lines 
 
 ```bash
 go mod download
-BOT_TOKEN=your_token_here go run main.go
+BOT_TOKEN=your_token_here go run .
 ```
 
 Or with `.env` support:
 
 ```bash
-go run main.go
+go run .
 ```
 
 ## Docker Compose
@@ -44,18 +44,6 @@ Use the existing `docker-compose.yml`:
 
 ```bash
 docker compose up --build -d
-```
-
-## badWords.txt Format
-
-- One word per line
-- Lines starting with `#` are treated as comments
-- Example:
-
-```text
-# blocked words
-badword
-anotherbadword
 ```
 
 ## Notes

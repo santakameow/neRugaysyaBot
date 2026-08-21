@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"os"
 
@@ -13,7 +14,7 @@ import (
 )
 
 // start bot with specified token
-func startBot(botToken string) error {
+func startBot(botToken string, db *sql.DB) error {
 	ctx := context.Background()
 
 	// register new bot
@@ -41,6 +42,10 @@ func startBot(botToken string) error {
 	bh.Handle(func(ctx *th.Context, update telego.Update) error {
 		// send message if bad word detected
 		if IsProfane(update.Message.Text) {
+			err := incrementSwearCount(db, update.Message.From.ID)
+			if err != nil {
+				fmt.Printf("failed to increment swear count: %s\n", err)
+			}
 			bot.SendMessage(
 				ctx,
 				tu.Messagef(
@@ -68,8 +73,14 @@ func main() {
 		fmt.Printf("error: %s", err)
 	}
 
+	db, err := InitDB()
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
 	// token of bot that comes from env
 	botToken := os.Getenv("BOT_TOKEN")
 
-	startBot(botToken)
+	startBot(botToken, db)
 }

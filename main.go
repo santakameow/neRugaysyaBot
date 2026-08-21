@@ -74,9 +74,7 @@ func startBot(botToken string, db *sql.DB) error {
 		return nil
 	}, th.CommandEqual("/stats"))
 
-	defer func() {
-		_ = bh.Stop()
-	}()
+	defer bh.Stop()
 
 	bh.Start()
 

@@ -4,7 +4,6 @@ a simple Telegram bot that detects bad words and sends a warning message.
 
 ## Features
 
-- Reads a list of forbidden words from `badWords.txt`
 - Detects bad words in incoming Telegram messages
 - Replies with a warning: `Не ругайся!`
 - Supports local execution and Docker deployment
@@ -17,10 +16,11 @@ a simple Telegram bot that detects bad words and sends a warning message.
 
 ## Configuration
 
-Create a `.env` file in the project root with the bot token:
+Create a `.env` file in the project root with the settings:
 
 ```env
 BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+DB_PATH="/data/sqlite.db"
 ```
 
 The bot also loads the bad word list from `badWords.txt`. Empty lines and lines starting with `#` are ignored.
@@ -29,12 +29,6 @@ The bot also loads the bad word list from `badWords.txt`. Empty lines and lines 
 
 ```bash
 go mod download
-BOT_TOKEN=your_token_here go run .
-```
-
-Or with `.env` support:
-
-```bash
 go run .
 ```
 

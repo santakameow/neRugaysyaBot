@@ -6,8 +6,10 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func InitDB() (*sql.DB, error) {
-	db, err := sql.Open("sqlite", "/data/stats.db")
+// function for initialisation database with path
+// that comes from .env
+func InitDB(dbPath string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		panic(err)
 	}
@@ -25,6 +27,7 @@ func InitDB() (*sql.DB, error) {
 	return db, nil
 }
 
+// function to increment user count of swear in database
 func incrementSwearCount(db *sql.DB, userID int64) error {
 	_, err := db.Exec(`
         INSERT INTO users (user_id, swear_count)
@@ -36,6 +39,8 @@ func incrementSwearCount(db *sql.DB, userID int64) error {
 	return err
 }
 
+// function to get swear count, returns int
+// can be useful somewhere, i dont know
 func getSwearCount(db *sql.DB, userID int64) (int, error) {
 	var count int
 

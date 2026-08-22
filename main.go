@@ -58,9 +58,23 @@ func startBot(botToken string, db *sql.DB) error {
 		return nil
 	}, th.AnyMessage())
 
-	defer func() {
-		_ = bh.Stop()
-	}()
+	bh.Handle(func(ctx *th.Context, update telego.Update) error {
+		swears, err := getSwearCount(db, update.Message.From.ID)
+		if err != nil {
+			return fmt.Errorf("failed to get swear count: %s", err)
+		}
+
+		bot.SendMessage(
+			ctx,
+			tu.Messagef(
+				tu.ID(update.Message.Chat.ID),
+				"%s, your swear count is: %d", update.Message.From.FirstName, swears,
+			),
+		)
+		return nil
+	}, th.CommandEqual("/stats"))
+
+	defer bh.Stop()
 
 	bh.Start()
 

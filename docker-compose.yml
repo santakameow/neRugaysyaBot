@@ -8,3 +8,12 @@ services:
       - .env
     volumes:
       - ./data:/data
+  nerugaysyabot-dev:
+    build: .
+    image: sakameow/nerugaysyabot-dev:latest
+    container_name: nerugaysyabot-dev
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data2:/data

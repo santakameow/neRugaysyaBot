@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math/rand/v2"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -12,6 +13,8 @@ import (
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
 )
+
+const replyChance = 0.67
 
 // start telegram bot with specified token
 func startBot(botToken string, db *sql.DB) error {
@@ -46,6 +49,11 @@ func startBot(botToken string, db *sql.DB) error {
 			if err != nil {
 				fmt.Printf("failed to increment swear count: %s\n", err)
 			}
+
+			if !(rand.Float32() > replyChance) {
+				return nil
+			}
+
 			bot.SendMessage(
 				ctx,
 				tu.Messagef(

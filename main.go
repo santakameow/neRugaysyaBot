@@ -80,7 +80,7 @@ func startBot(botToken string, db *sql.DB) error {
 			),
 		)
 		return nil
-	}, th.CommandEqual("/stats"))
+	}, th.CommandEqual("stats"))
 
 	defer bh.Stop()
 

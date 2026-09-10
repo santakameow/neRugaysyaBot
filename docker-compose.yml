@@ -6,5 +6,7 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    ports:
+      - "2112:2112"
     volumes:
       - ./data:/data

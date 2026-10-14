@@ -159,12 +159,16 @@ func main() {
 	// for development run i recommend to change DB_PATH in .env
 	dbPath := os.Getenv("DB_PATH")
 
+	// set metrics address from env.
+	// if not set, use default :2112
 	metricsAddr := os.Getenv("METRICS_ADDR")
 	if metricsAddr == "" {
 		metricsAddr = ":2112"
 	}
+	// start metric server
 	go startMetricsServer(metricsAddr)
 	fmt.Printf("metrics listening on %s\n", metricsAddr)
+
 
 	db, err := InitDB(dbPath)
 	if err != nil {

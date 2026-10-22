@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -15,6 +16,10 @@ func InitDB(dbPath string) (*sql.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open db: %w", err)
 	}
+
+	// SQLite has one writer; bound connection/cache growth during catch-up.
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
 
 	_, err = db.Exec(`
         CREATE TABLE IF NOT EXISTS users (
@@ -62,8 +67,8 @@ func InitDB(dbPath string) (*sql.DB, error) {
 }
 
 // function to increment user count of swear in database
-func incrementSwearCount(db *sql.DB, userID int64) error {
-	_, err := db.Exec(`
+func incrementSwearCount(ctx context.Context, db *sql.DB, userID int64) error {
+	_, err := db.ExecContext(ctx, `
         INSERT INTO users (user_id, swear_count)
         VALUES (?, 1)
         ON CONFLICT(user_id)
@@ -76,10 +81,10 @@ func incrementSwearCount(db *sql.DB, userID int64) error {
 // function to get swear count, returns int
 // can be useful somewhere, i dont know
 // unknown users have count 0 (no row yet), not an error
-func getSwearCount(db *sql.DB, userID int64) (int, error) {
+func getSwearCount(ctx context.Context, db *sql.DB, userID int64) (int, error) {
 	var count int
 
-	err := db.QueryRow(
+	err := db.QueryRowContext(ctx,
 		"SELECT swear_count FROM users WHERE user_id = ?",
 		userID,
 	).Scan(&count)

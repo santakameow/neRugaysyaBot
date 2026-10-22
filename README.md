@@ -40,6 +40,19 @@ Use the existing `docker-compose.yml`:
 docker compose up --build -d
 ```
 
+## Memory and backlog handling
+
+Updates are handled by four workers with a 20-second deadline per update.
+Long polling fetches at most 20 updates at a time and buffers four, providing
+backpressure when catching up after downtime. SQLite uses one connection.
+
+Telego uses Go's standard JSON implementation to avoid a startup allocation
+spike in its default encoder when many updates are cloned concurrently.
+
+Compose limits the container to 256 MiB and sets `GOMEMLIMIT=192MiB` (a soft
+Go runtime memory target, not a hard cap). For local runs, set this variable
+explicitly if desired. The container still restarts automatically after a crash.
+
 ## Notes
 
 - The bot replies only once per message on first detected bad word.

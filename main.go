@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math/rand/v2"
 	"os"
 	"os/signal"
-	"time"
+	"syscall"
 
 	"github.com/joho/godotenv"
 
@@ -18,31 +19,37 @@ import (
 
 const replyChance = 0.67
 
+func init() {
+	// Telego's default JSON encoder can allocate gigabytes when concurrent
+	// Update.Clone calls compile the same encoder during startup catch-up.
+	// Configure this before any bot goroutines start.
+	telego.SetJSONMarshal(json.Marshal)
+	telego.SetJSONUnmarshal(json.Unmarshal)
+}
+
 // start telegram bot with specified token
 func startBot(botToken string, db *sql.DB) error {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
 	// register new bot
-	bot, err := telego.NewBot(botToken, telego.WithDefaultDebugLogger())
+	bot, err := telego.NewBot(botToken)
 	if err != nil {
-		fmt.Printf("error: %s", err)
-		os.Exit(1)
+		return err
 	}
 
 	// get updates
-	updates, err := bot.UpdatesViaLongPolling(ctx, nil)
+	updates, err := bot.UpdatesViaLongPolling(ctx, &telego.GetUpdatesParams{
+		Limit:   20,
+		Timeout: 30,
+	}, telego.WithLongPollingBuffer(4))
 	if err != nil {
-		fmt.Printf("error: %s", err)
-		os.Exit(1)
+		return err
 	}
 
-	// register bot handler
-	bh, err := th.NewBotHandler(bot, updates)
-	if err != nil {
-		fmt.Printf("error: %s", err)
-		os.Exit(1)
-	}
+	// Use the routing group directly: BotHandler.Start starts an unbounded
+	// goroutine per update, defeating backpressure during backlog replay.
+	bh := &th.HandlerGroup{}
 
 	// handle statistics
 	bh.Handle(func(ctx *th.Context, update telego.Update) error {
@@ -50,7 +57,7 @@ func startBot(botToken string, db *sql.DB) error {
 		if update.Message == nil {
 			return nil
 		}
-		swears, err := getSwearCount(db, update.Message.From.ID)
+		swears, err := getSwearCount(ctx, db, update.Message.From.ID)
 		if err != nil {
 			DBErrorsTotal.Inc()
 			return fmt.Errorf("failed to get swear count: %s", err)
@@ -76,7 +83,7 @@ func startBot(botToken string, db *sql.DB) error {
 		if IsProfane(update.Message.Text) {
 			ProfaneTotal.Inc()
 			fmt.Printf("profane message from %d: %q hits=%v\n", update.Message.From.ID, update.Message.Text, FindProfanity(update.Message.Text))
-			err := incrementSwearCount(db, update.Message.From.ID)
+			err := incrementSwearCount(ctx, db, update.Message.From.ID)
 			if err != nil {
 				DBErrorsTotal.Inc()
 				fmt.Printf("failed to increment swear count: %s\n", err)
@@ -104,45 +111,14 @@ func startBot(botToken string, db *sql.DB) error {
 		return nil
 	}, th.AnyMessage())
 
-	// Initialize done chan
-	done := make(chan struct{}, 1)
-
-	// Handle stop signal (Ctrl+C)
-	go func() {
-		// Wait for stop signal
-		<-ctx.Done()
-		fmt.Println("Stopping...")
-
-		stopCtx, stopCancel := context.WithTimeout(context.Background(), time.Second*20)
-		defer stopCancel()
-
-	loop:
-		for len(updates) > 0 {
-			select {
-			case <-stopCtx.Done():
-				break loop
-			case <-time.After(time.Microsecond * 100):
-				// Continue
-			}
-		}
-		fmt.Println("Long polling done")
-
-		_ = bh.StopWithContext(stopCtx)
-		fmt.Println("Bot handler done")
-
-		// Notify that stop is done
-		done <- struct{}{}
-	}()
-
-	// Start handling in goroutine
-	go func() { _ = bh.Start() }()
 	fmt.Println("Handling updates...")
-
-	// Wait for the stop process to be completed
-	<-done
+	runUpdateWorkers(ctx, updates, func(ctx context.Context, update telego.Update) {
+		if err := bh.HandleUpdate(ctx, bot, update); err != nil {
+			fmt.Printf("failed to handle update %d: %s\n", update.UpdateID, err)
+		}
+	})
 	fmt.Println("Done")
-
-	return err
+	return nil
 }
 
 func main() {
@@ -169,12 +145,13 @@ func main() {
 	go startMetricsServer(metricsAddr)
 	fmt.Printf("metrics listening on %s\n", metricsAddr)
 
-
 	db, err := InitDB(dbPath)
 	if err != nil {
 		panic(err)
 	}
 	defer db.Close()
 
-	startBot(botToken, db)
+	if err := startBot(botToken, db); err != nil {
+		fmt.Printf("bot stopped: %s\n", err)
+	}
 }

@@ -4,6 +4,9 @@ services:
     image: sakameow/nerugaysyabot:latest
     container_name: nerugaysyabot
     restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      GOMEMLIMIT: 192MiB
     env_file:
       - .env
     ports:

@@ -69,6 +69,31 @@ func startBot(botToken string, db *sql.DB) error {
 		return err
 	}, th.CommandEqual("resetcount"))
 
+	// Register before the catch-all so commands are not counted as swearing.
+	bh.Handle(func(ctx *th.Context, update telego.Update) error {
+		if update.Message == nil {
+			return nil
+		}
+		StatsRequestsTotal.Inc()
+		chat := update.Message.Chat
+		if chat.Type != "group" && chat.Type != "supergroup" {
+			_, err := bot.SendMessage(ctx, tu.Message(tu.ID(chat.ID), "Use /globalstats in a group chat."))
+			return err
+		}
+		entries, err := getSwearLeaderboard(ctx, db, chat.ID)
+		if err != nil {
+			DBErrorsTotal.Inc()
+			return fmt.Errorf("failed to get leaderboard: %w", err)
+		}
+		messages := globalStatsMessages(entries)
+		for _, message := range messages {
+			if _, err := bot.SendMessage(ctx, tu.Message(tu.ID(chat.ID), message).WithParseMode(telego.ModeHTML)); err != nil {
+				return err
+			}
+		}
+		return nil
+	}, th.CommandEqual("globalstats"))
+
 	// handle statistics
 	bh.Handle(func(ctx *th.Context, update telego.Update) error {
 		StatsRequestsTotal.Inc()
@@ -131,6 +156,10 @@ func startBot(botToken string, db *sql.DB) error {
 
 	fmt.Println("Handling updates...")
 	runUpdateWorkers(ctx, updates, func(ctx context.Context, update telego.Update) {
+		if err := trackChatUsers(ctx, db, update.Message); err != nil {
+			DBErrorsTotal.Inc()
+			fmt.Printf("failed to track chat users: %s\n", err)
+		}
 		if err := bh.HandleUpdate(ctx, bot, update); err != nil {
 			fmt.Printf("failed to handle update %d: %s\n", update.UpdateID, err)
 		}

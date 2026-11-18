@@ -26,6 +26,13 @@ func InitDB(dbPath string) (*sql.DB, error) {
             user_id INTEGER PRIMARY KEY,
             swear_count INTEGER NOT NULL DEFAULT 0
         );
+        CREATE TABLE IF NOT EXISTS chat_users (
+            chat_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            is_bot INTEGER NOT NULL,
+            PRIMARY KEY (chat_id, user_id)
+        );
     `)
 	if err != nil {
 		db.Close()

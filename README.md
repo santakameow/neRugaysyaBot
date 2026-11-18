@@ -7,6 +7,9 @@ a simple Telegram bot that detects bad words and sends a warning message.
 - Detects bad words in incoming Telegram messages
 - Replies with a warning: `Не ругайся!`
 - Supports local execution and Docker deployment
+- `/stats` shows your stored swear count
+- `/globalstats` ranks observed users in the invoking group by fewest swears first, using existing database statistics, with clickable names (including zero counts and excluding bots). No admin status or Telegram membership lookups are required. Users and names are saved from received messages and join notifications; received leave notifications remove users. Silent members and unobserved departures cannot be discovered. Existing counts are per-user totals across chats, not chat-specific totals. Long rankings are split across messages.
+- Disable privacy mode via BotFather (`/setprivacy`) so the bot can receive ordinary group messages without being an administrator; Telegram may require re-adding the bot for this change to take effect. Tracking starts after deployment; historical counts are included once their users are observed in the group.
 
 ## Requirements
 

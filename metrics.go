@@ -29,7 +29,7 @@ var (
 	StatsRequestsTotal = prometheus.NewCounter(
 		prometheus.CounterOpts{
 			Name: "nerugaysya_stats_requests_total",
-			Help: "Total /stats command requests.",
+			Help: "Total /stats and /globalstats command requests.",
 		},
 	)
 	DBErrorsTotal = prometheus.NewCounter(

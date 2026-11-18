@@ -8,6 +8,7 @@ import (
 	"math/rand/v2"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/joho/godotenv"
@@ -32,6 +33,9 @@ func startBot(botToken string, db *sql.DB) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
+	// Missing or invalid owner configuration disables privileged commands.
+	ownerID, _ := strconv.ParseInt(os.Getenv("OWNER_USER_ID"), 10, 64)
+
 	// register new bot
 	bot, err := telego.NewBot(botToken)
 	if err != nil {
@@ -50,6 +54,20 @@ func startBot(botToken string, db *sql.DB) error {
 	// Use the routing group directly: BotHandler.Start starts an unbounded
 	// goroutine per update, defeating backpressure during backlog replay.
 	bh := &th.HandlerGroup{}
+
+	// Register before the catch-all so reset commands are never counted as swears.
+	bh.Handle(func(ctx *th.Context, update telego.Update) error {
+		reply, err := handleResetCount(ctx, db, ownerID, update.Message)
+		if err != nil {
+			DBErrorsTotal.Inc()
+			return fmt.Errorf("failed to reset swear count: %w", err)
+		}
+		if reply == "" {
+			return nil
+		}
+		_, err = bot.SendMessage(ctx, tu.Message(tu.ID(update.Message.Chat.ID), reply))
+		return err
+	}, th.CommandEqual("resetcount"))
 
 	// handle statistics
 	bh.Handle(func(ctx *th.Context, update telego.Update) error {

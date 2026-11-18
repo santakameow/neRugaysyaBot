@@ -78,6 +78,17 @@ func incrementSwearCount(ctx context.Context, db *sql.DB, userID int64) error {
 	return err
 }
 
+// resetSwearCount also initializes users who do not have a count yet.
+func resetSwearCount(ctx context.Context, db *sql.DB, userID int64) error {
+	_, err := db.ExecContext(ctx, `
+        INSERT INTO users (user_id, swear_count)
+        VALUES (?, 0)
+        ON CONFLICT(user_id)
+        DO UPDATE SET swear_count = 0
+    `, userID)
+	return err
+}
+
 // function to get swear count, returns int
 // can be useful somewhere, i dont know
 // unknown users have count 0 (no row yet), not an error

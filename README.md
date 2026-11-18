@@ -21,7 +21,14 @@ Create a `.env` file in the project root with the settings:
 ```env
 BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 DB_PATH="/data/sqlite.db"
+OWNER_USER_ID=123456789
 ```
+
+Set `OWNER_USER_ID` to **your own numeric Telegram user ID** (not the bot ID).
+Only this user can run `/resetcount <user_id>` to set the specified user’s
+swear count to zero, for example `/resetcount 987654321`. Other users are
+silently ignored. Missing, invalid, or non-positive `OWNER_USER_ID` disables
+resets. Restart the bot after changing configuration.
 
 The bot also loads the bad word list from `badWords.txt`. Empty lines and lines starting with `#` are ignored.
 

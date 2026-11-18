@@ -10,7 +10,7 @@ a simple Telegram bot that detects bad words and sends a warning message.
 
 ## Requirements
 
-- Go 1.26+
+- Go 1.27.3+
 - Docker (optional)
 - Telegram bot token
 
